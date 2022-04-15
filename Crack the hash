@@ -1,0 +1,32 @@
+только во втором level мне понадобился hashcat, в остальном я обходилась crackstation and cyberchef
+
+
+Hash: $6$aReallyHardSalt$6WKUTqzq.UQQmrm0p/T7MPpMbGNnzXPMAXi4bJMl9be.cfi3/qxIf.hsGpS41BqMhSrHVXgMpdjS6xeKZAs02.
+Salt: aReallyHardSalt
+
+└─# cat us
+ $6$aReallyHardSalt$6WKUTqzq.UQQmrm0p/T7MPpMbGNnzXPMAXi4bJMl9be.cfi3/qxIf.hsGpS41BqMhSrHVXgMpdjS6xeKZAs02.
+
+я знаю что длина слова составляет 4 буквы поэтому обрезаю словарь так как нужно мне
+
+└─# cat /root/Downloads/rockyou.txt| grep -E -w -o '\w{4}' > /root/Downloads/rockyou1.txt
+
+и начинаю поиск хэша
+└─# hashcat -m 1800 /root/Desktop/us  /root/Downloads/rockyou1.txt 
+
+2 задание вызвавшее затруднение
+
+Hash: e5d8870e5bdd26602cab8dbe07a942c8669e56d6
+
+Salt: tryhackme
+
+└─# cat /root/Desktop/hash                                                                                                                      130 ⨯
+e5d8870e5bdd26602cab8dbe07a942c8669e56d6:tryhackme 
+
+я знаю что длина слова составляет 12 буквы поэтому обрезаю словарь так как нужно мне
+└─# cat /root/Downloads/rockyou.txt| grep -E -w -o '\w{12}' > /root/Downloads/rockyou2.txt
+
+и начинаю поиск хэша
+└─# hashcat -m 160 /root/Desktop/hash  /root/Downloads/rockyou2.txt
+
+как я понимала какой именно формат выбирать: https://hashcat.net/wiki/doku.php?id=example_hashes ну и из подзказок)))

